@@ -1,6 +1,13 @@
 improved_chests = {}
 
-function improved_chests.take_items(from, to) --InvRef
+--[[
+	@fn take_items
+	@param from : InvRef
+	@param to : InvRef
+
+	Take the whole content (if possible) of the "from" inventory and place it (if possible) in the "to" inventory.
+]]
+function improved_chests.take_items(from, to)
 	for i = 0, from:get_size("main"), 1 do
 		current_stack = from:get_stack("main", i)
 		left_stack = to:add_item("main", current_stack)
@@ -8,20 +15,28 @@ function improved_chests.take_items(from, to) --InvRef
 	end
 end
 
-function improved_chests.sort_inventory(inv, key_type) --InvRef, int
+--[[
+	@fn sort_invetory
+	@param inv : InvRef
+	@param rule : int
+
+	Sort the inventory "inv" with a rule "rule".
+	This rule is an integer ∈ [1, 2].
+	Rule 1 → sort with the default full stack name (eg. default:stone < wool:blue).
+	Rule 2 → sort with a short "modless" stack name (eg. blue < stone).
+	This function uses insertion sorting algorithm.
+]]
+function improved_chests.sort_inventory(inv, rule) --InvRef, int
 	function default_stack_name(stack)
-		--sort with the default stack name (eg. default:stone < farming:cotton)
 		return stack:get_name()
 	end
 	function modless_stack_name(stack)
-		--sort with the stack name, regardless the mod name (eg. cotton < stone)
 		return string.match( stack:get_name(), "%a*:([%a_]*)" ) or ""
 	end
 	methods_functions = {[1]=default_stack_name, [2]=modless_stack_name}
 
-	local key = methods_functions[key_type] or methods_functions[1]
+	local key = methods_functions[rule] or methods_functions[1]
 
-	--using insertion sort
 	for i = 1, inv:get_size("main"), 1 do
 		local j = i
 		while j > 0 and key(inv:get_stack("main", j-1)) > key(inv:get_stack("main", j)) do
@@ -36,6 +51,16 @@ function improved_chests.sort_inventory(inv, key_type) --InvRef, int
 	end
 end
 
+--[[
+	@fn swap_inventories
+	@param from : InvRef
+	@param to : InvRef
+
+	Swap the content of the two inventories "from" and "to".
+	eg. if "from" contains {"default:wood 5", "farming:cotton 1"} and "to" contains {"bucket:bucket_empty 1", "default:dirt 20"},
+	after the swap, "from" will contain {"bucket:bucket_empty 1", "default:dirt 20"}
+	and "to" will contain {"default:wood 5", "farming:cotton 1"}
+]]
 function improved_chests.swap_inventories(from, to) --InvRef
 	stacks_to_swap = math.min(from:get_size("main"), to:get_size("main"))
 	for i = 0, stacks_to_swap, 1 do
@@ -46,6 +71,10 @@ function improved_chests.swap_inventories(from, to) --InvRef
 	end
 end
 
+--[[
+	@fn get_chest_formspec
+	@return the chest formspec string
+]]
 function improved_chests.get_chest_formspec()
 	local formspec =
 		"size[8,10]"..
@@ -71,6 +100,10 @@ function improved_chests.get_chest_formspec()
 	return formspec
 end
 
+--[[
+	@fn get_chest_formspec
+	@return the locked chest formspec string
+]]
 function improved_chests.get_locked_chest_formspec(pos)
 	local spos = pos.x .. "," .. pos.y .. "," ..pos.z
 	local formspec =
@@ -124,12 +157,9 @@ minetest.register_node("improved_chests:chest", {
 				" takes stuff from chest at "..minetest.pos_to_string(pos))
 	end,
 	on_receive_fields = function(pos, formname, fields, sender)
-for k,v in pairs(fields) do print(k,v) end
-
 		if sender == nil then
 			return
 		end
-
 
 		if fields["sort_key"] then
 			local event = minetest.explode_textlist_event(fields["sort_key"])
