@@ -1,4 +1,4 @@
-"Improved chests" mod
+# "Improved chests" mod
 by Daïmanu
 
 License of code and medias: WTFPL
